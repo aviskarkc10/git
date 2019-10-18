@@ -4051,6 +4051,62 @@ test_expect_success '12c-check: Moving one directory hierarchy into another w/ c
 	)
 '
 
+# Testcase 12d, Rename/merge of subdirectory into the root
+#   Commit O: a/b/{foo.c}
+#   Commit A: foo.c
+#   Commit B: a/b/{foo.c,bar.c}
+#   Expected: a/b/{foo.c,bar.c}
+
+test_expect_success '12d-setup: Rename (merge) of subdirectory into the root' '
+	test_create_repo 12d &&
+	(
+		cd 12d &&
+
+		mkdir -p a/b/subdir &&
+		test_commit a/b/subdir/foo.c &&
+
+		git branch O &&
+		git branch A &&
+		git branch B &&
+
+		git checkout A &&
+		mkdir subdir &&
+		git mv a/b/subdir/foo.c.t subdir/foo.c.t &&
+		test_tick &&
+		git commit -m "A" &&
+
+		git checkout B &&
+		test_commit a/b/bar.c
+	)
+'
+
+test_expect_success '12d-check: Rename (merge) of subdirectory into the root' '
+	(
+		cd 12d &&
+
+		git checkout A^0 &&
+
+		git -c merge.directoryRenames=true merge -s recursive B^0 &&
+
+		git ls-files -s >out &&
+		test_line_count = 2 out &&
+
+		git rev-parse >actual \
+			HEAD:subdir/foo.c.t   HEAD:bar.c.t &&
+		git rev-parse >expect \
+			O:a/b/subdir/foo.c.t  B:a/b/bar.c.t &&
+		test_cmp expect actual &&
+
+		git hash-object bar.c.t >actual &&
+		git rev-parse B:a/b/bar.c.t >expect &&
+		test_cmp expect actual &&
+
+		test_must_fail git rev-parse HEAD:a/b/subdir/foo.c.t &&
+		test_must_fail git rev-parse HEAD:a/b/bar.c.t &&
+		test_path_is_missing a/
+	)
+'
+
 ###########################################################################
 # SECTION 13: Checking informational and conflict messages
 #
