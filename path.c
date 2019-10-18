@@ -268,7 +268,7 @@ static int trie_find(struct trie *root, const char *key, match_fn fn,
 	int result;
 	struct trie *child;
 
-	if (!*key) {
+	if (!*key || !strcmp(key, ".lock")) {
 		/* we have reached the end of the key */
 		if (root->value && !root->len)
 			return fn(key, root->value, baton);
@@ -288,7 +288,7 @@ static int trie_find(struct trie *root, const char *key, match_fn fn,
 
 	/* Matched the entire compressed section */
 	key += i;
-	if (!*key)
+	if (!*key || !strcmp(key, ".lock"))
 		/* End of key */
 		return fn(key, root->value, baton);
 

@@ -117,6 +117,21 @@ test_expect_success 'git-path inside sub-dir' '
 	test_cmp expect actual
 '
 
+test_expect_success 'git-path in worktree' '
+	test_tick &&
+	git commit --allow-empty -m empty &&
+	git worktree add --detach wt &&
+	test_write_lines >expect \
+		"$(pwd)/.git/worktrees/wt/logs/HEAD" \
+		"$(pwd)/.git/worktrees/wt/logs/HEAD.lock" \
+		"$(pwd)/.git/worktrees/wt/index" \
+		"$(pwd)/.git/worktrees/wt/index.lock" &&
+	git -C wt rev-parse >actual \
+		--git-path logs/HEAD --git-path logs/HEAD.lock \
+		--git-path index --git-path index.lock &&
+	test_cmp expect actual
+'
+
 test_expect_success 'rev-parse --is-shallow-repository in shallow repo' '
 	test_commit test_commit &&
 	echo true >expect &&
